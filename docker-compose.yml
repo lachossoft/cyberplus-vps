@@ -46,6 +46,12 @@ services:
       - 80:80
       - 443:443
       - 81:81
+    environment:
+        - DB_MYSQL_HOST=mariadb
+        - DB_MYSQL_PORT=3306
+        - DB_MYSQL_USER=usuario
+        - DB_MYSQL_PASSWORD=usuari
+        - DB_MYSQL_NAME=db para hesk
     volumes:
       - ./nginx-proxy-manager/data:/data
       - ./nginx-proxy-manager/letsencrypt:/etc/letsencrypt
