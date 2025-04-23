@@ -1,0 +1,67 @@
+version: '3'
+services:
+  mariadb:
+    container_name: mariadb
+    image: mariadb:latest
+    restart: always
+    expose:
+      - 3306
+    environment:
+    - MYSQL_ROOT_PASSWORD= password de root
+    - MARAIADB_USER= usuario
+    - MARAIADB_PASSWORD= usuari
+    - MARAIADB_DATABASE= db para hesk
+    volumes:
+      - ./mariadb_data:/var/lib/mysql
+    networks:
+      - hesk_network
+  phpmyadmin:
+    container_name: phpmyadmin
+    image: phpmyadmin:latest
+    restart: always
+    ports:
+      - 9090:90
+    environment:
+      - PMA_ARBITRARY=1
+    depends_on:
+      - mariadb
+    networks:
+      - hesk_network     
+  hesk:
+    container_name: apache-server
+    image: php:8.3.20-fpm-alpine3.20
+    volumes:
+      - ./hesk:/var/www/html
+    expose:
+      - 80
+    networks:
+      - hesk_network
+    depends_on:
+      - mariadb 
+  mgmt-proxy-manager:
+    container_name: mgmt-proxy-manager
+    image: jc21/nginx-proxy-manager:latest
+    restart: always
+    ports:
+      - 80:80
+      - 443:443
+      - 81:81
+    volumes:
+      - ./nginx-proxy-manager/data:/data
+      - ./nginx-proxy-manager/letsencrypt:/etc/letsencrypt
+    networks:
+      - hesk_network
+    
+volumes:
+  mariadb_data:
+    driver: local
+  hesk_data:
+    driver: local
+  npm_data:
+    driver: local
+  npm_letsencrypt:
+    driver: local
+networks:
+  hesk_network:
+    driver: bridge
+
