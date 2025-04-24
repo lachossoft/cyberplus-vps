@@ -1,73 +1,90 @@
 version: '3'
 services:
+  postgresdb:
+    image: postgres:latest
+    container_name: postgresdb
+    expose:
+      - '5432'
+    environment:
+      POSTGRES_USER: 'npm'
+      POSTGRES_PASSWORD: 'Cyb3rZ0ne$;'
+      POSTGRES_DB: 'npm'
+    volumes:
+      - ./postgres_data:/var/lib/postgresql/data
+    networks:
+      - npm_network
+  proxy:
+    image: 'jc21/nginx-proxy-manager:latest'
+    restart: unless-stopped
+    ports:
+      - '80:80'
+      - '443:443'
+        #- '8081:81'
+    environment:
+      DB_POSTGRES_HOST: 'postgresdb'
+      DB_POSTGRES_PORT: '5432'
+      DB_POSTGRES_USER: 'npm'
+      DB_POSTGRES_PASSWORD: 'Cyb3rZ0ne$;'
+      DB_POSTGRES_NAME: 'npm'
+    volumes:
+      - ./npm_data:/data
+      - ./npm_letsencrypt:/etc/letsencrypt
+    networks:
+      -  npm_network
+
   mariadb:
-    container_name: mariadb
     image: mariadb:latest
+    container_name: mariadb
     restart: always
     expose:
       - 3306
+    ports:
+      - "3306:3306"
     environment:
-    - MYSQL_ROOT_PASSWORD= password de root
-    - MARAIADB_USER= usuario
-    - MARAIADB_PASSWORD= usuari
-    - MARAIADB_DATABASE= db para hesk
+      MARIADB_ROOT_PASSWORD: ;AOlSR8hzu12
+      
     volumes:
       - ./mariadb_data:/var/lib/mysql
     networks:
-      - hesk_network
+      - npm_network
   phpmyadmin:
-    container_name: phpmyadmin
     image: phpmyadmin:latest
+    container_name: phpmyadmin
     restart: always
-    ports:
-      - 9090:90
+    expose:
+      - 80
     environment:
-      - PMA_ARBITRARY=1
+      PMA_HOST: mariadb
+      PMA_PORT: 3306
+      PMA_ARBITRARY: 1
     depends_on:
       - mariadb
     networks:
-      - hesk_network     
+      - npm_network
+
   hesk:
-    container_name: apache-server
-    image: php:8.3.20-fpm-alpine3.20
+    container_name: hesk
+    image: brunoah/hesk
     volumes:
       - ./hesk:/var/www/html
     expose:
       - 80
     networks:
-      - hesk_network
+      - npm_network
     depends_on:
-      - mariadb 
-  mgmt-proxy-manager:
-    container_name: mgmt-proxy-manager
-    image: jc21/nginx-proxy-manager:latest
-    restart: always
-    ports:
-      - 80:80
-      - 443:443
-      - 81:81
-    environment:
-        - DB_MYSQL_HOST=mariadb
-        - DB_MYSQL_PORT=3306
-        - DB_MYSQL_USER=usuario
-        - DB_MYSQL_PASSWORD=usuari
-        - DB_MYSQL_NAME=db para hesk
-    volumes:
-      - ./nginx-proxy-manager/data:/data
-      - ./nginx-proxy-manager/letsencrypt:/etc/letsencrypt
-    networks:
-      - hesk_network
-    
+      - mariadb
+
 volumes:
-  mariadb_data:
-    driver: local
-  hesk_data:
+  postgres_data:
     driver: local
   npm_data:
     driver: local
   npm_letsencrypt:
     driver: local
+  mariadb_data:
+    driver: local
+  hesk:
+    driver: local
 networks:
-  hesk_network:
+  npm_network:
     driver: bridge
-

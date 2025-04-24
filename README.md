@@ -8,64 +8,74 @@ Este proyecto utiliza Docker Compose para gestionar los servicios necesarios par
 
 El archivo `docker-compose.yml` define los siguientes servicios:
 
-### 1. MariaDB
+### 1. PostgresDB
+- **Descripción**: Base de datos PostgreSQL utilizada por el gestor de proxy inverso.
+- **Imagen**: `postgres:latest`
+- **Puertos expuestos**: `5432`
+- **Variables de entorno**:
+  - `POSTGRES_USER`: Usuario de la base de datos.
+  - `POSTGRES_PASSWORD`: Contraseña del usuario de la base de datos.
+  - `POSTGRES_DB`: Nombre de la base de datos.
+- **Volúmenes**:
+  - `./postgres_data:/var/lib/postgresql/data`
+
+### 2. Proxy (Nginx Proxy Manager)
+- **Descripción**: Gestor de proxy inverso para manejar las solicitudes HTTP y HTTPS.
+- **Imagen**: `jc21/nginx-proxy-manager:latest`
+- **Puertos expuestos**:
+  - `80`: HTTP
+  - `443`: HTTPS
+- **Variables de entorno**:
+  - `DB_POSTGRES_HOST`: Host de la base de datos PostgreSQL.
+  - `DB_POSTGRES_PORT`: Puerto de la base de datos PostgreSQL.
+  - `DB_POSTGRES_USER`: Usuario de la base de datos PostgreSQL.
+  - `DB_POSTGRES_PASSWORD`: Contraseña del usuario de la base de datos PostgreSQL.
+  - `DB_POSTGRES_NAME`: Nombre de la base de datos PostgreSQL.
+- **Volúmenes**:
+  - `./npm_data:/data`
+  - `./npm_letsencrypt:/etc/letsencrypt`
+
+### 3. MariaDB
 - **Descripción**: Base de datos relacional utilizada por HESK.
 - **Imagen**: `mariadb:latest`
 - **Puertos expuestos**: `3306`
 - **Variables de entorno**:
-  - `MYSQL_ROOT_PASSWORD`: Contraseña del usuario root.
-  - `MARAIADB_USER`: Usuario de la base de datos.
-  - `MARAIADB_PASSWORD`: Contraseña del usuario de la base de datos.
-  - `MARAIADB_DATABASE`: Nombre de la base de datos.
+  - `MARIADB_ROOT_PASSWORD`: Contraseña del usuario root.
 - **Volúmenes**:
   - `./mariadb_data:/var/lib/mysql`
 
-### 2. phpMyAdmin
+### 4. phpMyAdmin
 - **Descripción**: Interfaz gráfica para gestionar la base de datos MariaDB.
 - **Imagen**: `phpmyadmin:latest`
-- **Puertos expuestos**: `9090` (mapeado al puerto `90` del contenedor).
+- **Puertos expuestos**: `80`
 - **Variables de entorno**:
-  - `PMA_ARBITRARY=1`: Permite conexiones arbitrarias.
+  - `PMA_HOST`: Host de la base de datos MariaDB.
+  - `PMA_PORT`: Puerto de la base de datos MariaDB.
+  - `PMA_ARBITRARY`: Permite conexiones arbitrarias.
 - **Dependencias**:
   - Depende del servicio `mariadb`.
 
-### 3. HESK
+### 5. HESK
 - **Descripción**: Aplicación principal de HESK.
-- **Imagen**: `php:8.3.20-fpm-alpine3.20`
+- **Imagen**: `brunoah/hesk`
 - **Puertos expuestos**: `80`
 - **Volúmenes**:
   - `./hesk:/var/www/html`
 - **Dependencias**:
   - Depende del servicio `mariadb`.
 
-### 4. Nginx Proxy Manager
-- **Descripción**: Gestor de proxy inverso para manejar las solicitudes HTTP y HTTPS.
-- **Imagen**: `jc21/nginx-proxy-manager:latest`
-- **Puertos expuestos**:
-  - `80`: HTTP
-  - `443`: HTTPS
-  - `81`: Interfaz de gestión
-- **Variables de entorno**:
-  - `DB_MYSQL_HOST`: Host de la base de datos (mariadb).
-  - `DB_MYSQL_PORT`: Puerto de la base de datos (3306).
-  - `DB_MYSQL_USER`: Usuario de la base de datos.
-  - `DB_MYSQL_PASSWORD`: Contraseña del usuario de la base de datos.
-  - `DB_MYSQL_NAME`: Nombre de la base de datos.
-- **Volúmenes**:
-  - `./nginx-proxy-manager/data:/data`
-  - `./nginx-proxy-manager/letsencrypt:/etc/letsencrypt`
-
 ## Redes
 
-Se utiliza una red personalizada llamada `hesk_network` con el driver `bridge` para conectar todos los servicios.
+Se utiliza una red personalizada llamada `npm_network` con el driver `bridge` para conectar todos los servicios.
 
 ## Volúmenes
 
 Los siguientes volúmenes se configuran para persistir los datos:
-- `mariadb_data`: Almacena los datos de MariaDB.
-- `hesk_data`: Almacena los datos de HESK.
+- `postgres_data`: Almacena los datos de PostgreSQL.
 - `npm_data`: Almacena los datos de configuración de Nginx Proxy Manager.
 - `npm_letsencrypt`: Almacena los certificados SSL generados por Let's Encrypt.
+- `mariadb_data`: Almacena los datos de MariaDB.
+- `hesk`: Almacena los datos de HESK.
 
 ## Uso
 
@@ -85,7 +95,7 @@ docker-compose down
 
 ### 3. Acceso a los Servicios
 - **HESK**: Disponible en `http://localhost` (puerto 80).
-- **phpMyAdmin**: Disponible en `http://localhost:9090`.
+- **phpMyAdmin**: Disponible en `http://localhost:80`.
 - **Nginx Proxy Manager**: Interfaz de gestión disponible en `http://localhost:81`.
 
 ## Notas
